@@ -1,0 +1,49 @@
+appId: ai.securevision.browser
+productName: SecureVision Browser
+copyright: Copyright © SecureVision AI
+
+directories:
+  output: release
+  buildResources: resources
+
+files:
+  - dist-electron/**/*
+  - package.json
+
+asar: true
+
+win:
+  target:
+    - target: nsis
+      arch:
+        - x64
+  icon: resources/icon.png
+  artifactName: ${productName}-Setup-${version}-${arch}.${ext}
+
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  shortcutName: SecureVision Browser
+
+mac:
+  target:
+    - dmg
+  icon: resources/icon.png
+  category: public.app-category.productivity
+  artifactName: ${productName}-${version}-${arch}.${ext}
+
+linux:
+  target:
+    - AppImage
+  icon: resources/icon.png
+  category: Network
+  artifactName: ${productName}-${version}-${arch}.${ext}
+
+# Enable GitHub auto-updates: set GH_TOKEN, then run `pnpm run publish:win`
+# publish:
+#   provider: github
+#   owner: YOUR_GITHUB_ORG
+#   repo: SV-AI-Browser
+publish: null

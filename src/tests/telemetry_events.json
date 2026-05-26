@@ -1,0 +1,32 @@
+[
+  {
+    "event": "privacy_consent_updated",
+    "timestamp": 1779033359093,
+    "payload": {
+      "consented": false,
+      "platform": "win32",
+      "arch": "x64",
+      "version": "1.0.0"
+    }
+  },
+  {
+    "event": "privacy_consent_updated",
+    "timestamp": 1779033359094,
+    "payload": {
+      "consented": true,
+      "platform": "win32",
+      "arch": "x64",
+      "version": "1.0.0"
+    }
+  },
+  {
+    "event": "test_event_consented",
+    "timestamp": 1779033359094,
+    "payload": {
+      "data": "active_opt_in",
+      "platform": "win32",
+      "arch": "x64",
+      "version": "1.0.0"
+    }
+  }
+]
