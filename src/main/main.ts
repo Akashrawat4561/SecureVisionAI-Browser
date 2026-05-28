@@ -5,31 +5,31 @@ import { dirname } from 'path'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
-import { BrowserViewManager } from './browser-view-manager'
-import { TabManager } from './tab-manager'
-import { SessionManager } from './session-manager'
-import { HistoryManager } from './history-manager'
-import { BookmarksManager } from './bookmarks-manager'
-import { DownloadsManager } from './downloads-manager'
-import { WorkspaceManager } from './workspace-manager'
-import { SettingsManager } from './settings-manager'
-import { createShortcutRegistry } from './keyboard-shortcuts'
-import { securityEngine } from './security-engine'
-import { applyIpcHardening } from './ipc-validator'
-import { ExtensionSecurityManager } from './extension-security-manager'
+import { BrowserViewManager } from './managers/browser-view-manager'
+import { TabManager } from './managers/tab-manager'
+import { SessionManager } from './managers/session-manager'
+import { historyManager } from './managers/history-manager'
+import { BookmarksManager } from './managers/bookmarks-manager'
+import { DownloadsManager } from './managers/downloads-manager'
+import { WorkspaceManager } from './managers/workspace-manager'
+import { SettingsManager } from './managers/settings-manager'
+import { createShortcutRegistry } from './core/keyboard-shortcuts'
+import { securityEngine } from './security/security-engine'
+import { applyIpcHardening } from './security/ipc-validator'
+import { ExtensionSecurityManager } from './managers/extension-security-manager'
 
 const isDev = process.env.NODE_ENV !== 'production'
 
 // ── Apply IPC Hardening (Phase 9) ──────────────────────────────────────────
 applyIpcHardening()
 
-import { globalSafeModeManager } from './safe-mode-manager'
-import { globalTelemetryManager } from './telemetry-diagnostics'
-import { globalUpdateManager } from './update-manager'
+import { globalSafeModeManager } from './managers/safe-mode-manager'
+import { globalTelemetryManager } from './core/telemetry-diagnostics'
+import { globalUpdateManager } from './managers/update-manager'
 
 // ── Singleton manager instances (main-process only) ──────────────────────────
 const sessionMgr = new SessionManager()
-const historyMgr = new HistoryManager()
+
 const bookmarksMgr = new BookmarksManager()
 const workspaceMgr = new WorkspaceManager()
 const settingsMgr = new SettingsManager()
@@ -62,7 +62,7 @@ function createWindow() {
       responseHeaders: {
         ...details.responseHeaders,
         'Content-Security-Policy': [
-          "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; connect-src 'self' https://api.openai.com https://generativelanguage.googleapis.com wss: https:; img-src 'self' data: https:; font-src 'self' data:;",
+          "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' http://localhost:*; style-src 'self' 'unsafe-inline' http://localhost:*; connect-src 'self' http://localhost:* ws://localhost:* https://api.openai.com https://generativelanguage.googleapis.com wss: https:; img-src 'self' data: https:; font-src 'self' data:;",
         ],
         'X-Frame-Options': ['SAMEORIGIN'],
         'X-Content-Type-Options': ['nosniff'],
@@ -111,7 +111,7 @@ function createWindow() {
   mainWindow.on('closed', () => {
     shortcuts.unregisterAll()
     sessionMgr.destroyIncognitoSessions()
-    historyMgr.destroy()
+    historyManager.destroy()
   })
 
   // ── IPC: Settings ──────────────────────────────────────────────────────────
@@ -129,11 +129,24 @@ function createWindow() {
       })
     }
   })
+  // ── IPC: Page Content ──────────────────────────────────────────────────────
+  ipcMain.handle('get-page-content', async () => {
+    try {
+      const activeId = tabMgr['activeTabId']
+      if (!activeId) return ''
+      const view = viewMgr.getActiveView(activeId)
+      if (!view) return ''
+      return await view.webContents.executeJavaScript('document.body.innerText')
+    } catch {
+      return ''
+    }
+  })
 
   // ── IPC: History ───────────────────────────────────────────────────────────
-  ipcMain.handle('history-get-recent', (_event, limit?: number) => historyMgr.getRecent(limit))
-  ipcMain.handle('history-search', (_event, query: string) => historyMgr.search(query))
-  ipcMain.on('history-clear', () => historyMgr.clear())
+  ipcMain.handle('history-get-recent', (_event, limit?: number) => historyManager.getRecent(limit))
+  ipcMain.handle('history-search', (_event, query: string) => historyManager.search(query))
+  ipcMain.on('history-clear', () => historyManager.clear())
+  ipcMain.on('history-remove', (_event, id: string) => historyManager.remove(id))
 
   // ── IPC: Bookmarks ─────────────────────────────────────────────────────────
   ipcMain.handle('bookmarks-get', (_event, workspaceId: string) => bookmarksMgr.getByWorkspace(workspaceId))
@@ -165,18 +178,7 @@ function createWindow() {
   })
   ipcMain.on('workspaces-rename', (_event, { id, name }) => workspaceMgr.rename(id, name))
 
-  // ── IPC: Page Content for AI ───────────────────────────────────────────────
-  ipcMain.handle('get-page-content', async () => {
-    const activeId = tabMgr['activeTabId']
-    if (!activeId) return ''
-    const view = viewMgr.getActiveView(activeId)
-    if (!view) return ''
-    try {
-      return await view.webContents.executeJavaScript('document.body.innerText')
-    } catch {
-      return ''
-    }
-  })
+// Duplicate get-page-content handler removed – using the earlier definition.
 
   // ── IPC: Telemetry & Consent ────────────────────────────────────────────────
   ipcMain.on('telemetry-set-consent', (_event, consent: boolean) => globalTelemetryManager.setTelemetryConsent(consent))
@@ -192,7 +194,7 @@ function createWindow() {
 
   // ── Load renderer ──────────────────────────────────────────────────────────
   if (isDev) {
-    const devUrl = process.env.ELECTRON_RENDERER_URL || 'http://localhost:5174'
+    const devUrl = process.env.ELECTRON_RENDERER_URL || 'http://localhost:5173'
     mainWindow.loadURL(devUrl)
     mainWindow.webContents.openDevTools({ mode: 'detach' })
   } else {

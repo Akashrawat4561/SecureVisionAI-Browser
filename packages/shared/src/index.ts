@@ -26,6 +26,8 @@ export interface BrowserSettings {
   aiAutosyncEnabled: boolean
   tabSuspensionDelayMinutes: number
   theme: 'dark' | 'light' | 'system'
+  GEMINI_API_KEY?: string
+  OPENAI_API_KEY?: string
 }
 
 export interface AIMessage {

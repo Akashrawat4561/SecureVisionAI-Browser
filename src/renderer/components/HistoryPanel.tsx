@@ -123,21 +123,33 @@ export const HistoryPanel: React.FC<HistoryPanelProps> = ({ isOpen, onClose, onN
                       {dateLabel}
                     </p>
                     {items.map((entry) => (
-                      <motion.button
-                        key={entry.id}
-                        whileHover={{ backgroundColor: 'rgba(255,255,255,0.05)' }}
-                        onClick={() => { onNavigate(entry.url); onClose() }}
-                        className="w-full flex items-center gap-3 px-4 py-2.5 text-left transition-colors"
-                      >
-                        <Globe className="w-4 h-4 text-zinc-600 flex-shrink-0" />
-                        <div className="flex-1 min-w-0">
-                          <p className="text-xs font-medium text-zinc-300 truncate">{entry.title || 'Untitled'}</p>
-                          <p className="text-[10px] text-zinc-600 truncate">{entry.url}</p>
-                        </div>
-                        <span className="text-[10px] text-zinc-700 flex-shrink-0">
-                          {new Date(entry.visitedAt).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
-                        </span>
-                      </motion.button>
+                      <div key={entry.id} className="relative group w-full flex items-center">
+                        <motion.button
+                          whileHover={{ backgroundColor: 'rgba(255,255,255,0.05)' }}
+                          onClick={() => { onNavigate(entry.url); onClose() }}
+                          className="flex-1 flex items-center gap-3 px-4 py-2.5 text-left transition-colors"
+                        >
+                          <Globe className="w-4 h-4 text-zinc-600 flex-shrink-0" />
+                          <div className="flex-1 min-w-0 pr-6">
+                            <p className="text-xs font-medium text-zinc-300 truncate">{entry.title || 'Untitled'}</p>
+                            <p className="text-[10px] text-zinc-600 truncate">{entry.url}</p>
+                          </div>
+                          <span className="text-[10px] text-zinc-700 flex-shrink-0">
+                            {new Date(entry.visitedAt).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
+                          </span>
+                        </motion.button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            window.electronAPI?.send?.('history-remove', entry.id)
+                            setEntries(prev => prev.filter(p => p.id !== entry.id))
+                          }}
+                          className="absolute right-2 opacity-0 group-hover:opacity-100 p-1.5 rounded-lg hover:bg-red-500/10 text-zinc-500 hover:text-red-400 transition-all"
+                          title="Remove from history"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
                     ))}
                   </div>
                 ))

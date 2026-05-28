@@ -2,6 +2,7 @@ import { BrowserWindow, ipcMain } from 'electron'
 import { Tab } from '@securevision/shared'
 import { BrowserViewManager } from './browser-view-manager'
 import { workspaceManager } from './workspace-manager'
+import { historyManager } from './history-manager'
 
 export class TabManager {
   private tabs: Map<string, Tab> = new Map()
@@ -164,6 +165,7 @@ export class TabManager {
       if (tab) {
         if (!(tab.url === 'securevision://newtab' && url === 'about:blank')) {
           tab.url = url
+          historyManager.add({ url: tab.url, title: tab.title || url, favicon: tab.favicon })
         }
         this.saveActiveWorkspaceTabs()
         this.syncTabsToRenderer()
@@ -175,6 +177,7 @@ export class TabManager {
       if (tab) {
         if (!(tab.url === 'securevision://newtab' && url === 'about:blank')) {
           tab.url = url
+          historyManager.add({ url: tab.url, title: tab.title || url, favicon: tab.favicon })
         }
         this.saveActiveWorkspaceTabs()
         this.syncTabsToRenderer()

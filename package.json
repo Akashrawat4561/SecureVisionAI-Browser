@@ -6,7 +6,7 @@
   "private": true,
   "main": "dist-electron/main.mjs",
   "scripts": {
-    "dev": "pnpm run build:electron && concurrently -k \"vite --port 5173\" \"wait-on http://localhost:5173 && cross-env NODE_ENV=development ELECTRON_RENDERER_URL=http://localhost:5173 electron .\"",
+    "dev": "pnpm run build:electron && concurrently -k \"vite --port 5175\" \"wait-on http://localhost:5175 && cross-env NODE_ENV=development ELECTRON_RENDERER_URL=http://localhost:5175 electron .\"",
     "dev:renderer": "vite --port 5174 --strictPort",
     "dev:electron": "cross-env NODE_ENV=development electron .",
     "build:electron": "vite build --ssr src/main/main.ts --outDir dist-electron --emptyOutDir false && tsc src/main/preload.ts --outDir dist-electron --target es2022 --moduleResolution node --module commonjs --skipLibCheck true",

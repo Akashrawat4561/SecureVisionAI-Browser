@@ -35,7 +35,7 @@ function createConversation(tabId: string, provider: AIProvider): AIConversation
     id: `conv_${tabId}_${Date.now()}`,
     tabId,
     provider,
-    model: provider === 'OPENAI' ? 'gpt-4o-mini' : 'gemini-1.5-flash',
+    model: provider === 'OPENAI' ? 'gpt-4o-mini' : 'gemini-2.5-flash',
     messages: [],
     tokenCount: 0,
     updatedAt: new Date().toISOString(),

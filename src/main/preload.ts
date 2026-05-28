@@ -10,6 +10,7 @@ const ALLOWED_SEND_CHANNELS = [
   'navigate-active-tab',
   'update-view-bounds',
   'history-clear',
+  'history-remove',
   'bookmarks-remove',
   'workspaces-set-active',
   'workspaces-remove',

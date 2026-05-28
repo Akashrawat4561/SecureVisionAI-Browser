@@ -64,6 +64,16 @@ export class HistoryManager {
   public add(entry: Omit<HistoryEntry, 'id' | 'visitedAt'>, isIncognito = false) {
     if (isIncognito) return // Never persist incognito history
 
+    // Prevent duplicate consecutive entries
+    const lastEntry = this.entries[this.entries.length - 1]
+    if (lastEntry && lastEntry.url === entry.url) {
+      lastEntry.visitedAt = new Date().toISOString()
+      lastEntry.title = entry.title || lastEntry.title
+      if (entry.favicon) lastEntry.favicon = entry.favicon
+      this.dirty = true
+      return
+    }
+
     const newEntry: HistoryEntry = {
       ...entry,
       id: `hist_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
@@ -95,6 +105,15 @@ export class HistoryManager {
     this.entries = []
     this.dirty = true
     this.flush()
+  }
+
+  public remove(id: string) {
+    const idx = this.entries.findIndex(e => e.id === id)
+    if (idx !== -1) {
+      this.entries.splice(idx, 1)
+      this.dirty = true
+      this.flush()
+    }
   }
 
   public destroy() {

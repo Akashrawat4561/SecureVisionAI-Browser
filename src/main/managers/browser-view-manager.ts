@@ -1,7 +1,7 @@
 import { BrowserView, BrowserWindow } from 'electron'
 import * as path from 'path'
-import { securityEngine } from './security-engine'
-import { MemoryPurgeOrchestrator } from './memory-orchestrator'
+import { securityEngine } from '../security/security-engine'
+import { MemoryPurgeOrchestrator } from '../core/memory-orchestrator'
 
 export class BrowserViewManager {
   private activeViews: Map<string, BrowserView> = new Map()

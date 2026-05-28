@@ -24,7 +24,7 @@ export const SmartNotes: React.FC<SmartNotesProps> = ({ tabId, pageUrl }) => {
   const [isImproving, setIsImproving] = useState(false)
   const [savedIndicator, setSavedIndicator] = useState(false)
   const autosaveTimer = useRef<NodeJS.Timeout | null>(null)
-  const { sendMessage } = useAIInference()
+  const { sendMessage, generateCompletion } = useAIInference()
 
   // Load saved notes for this URL
   useEffect(() => {
@@ -58,10 +58,22 @@ export const SmartNotes: React.FC<SmartNotesProps> = ({ tabId, pageUrl }) => {
   const handleAIImprove = async () => {
     if (!content.trim() || isImproving) return
     setIsImproving(true)
-    await sendMessage(
-      tabId,
-      `Please improve and restructure these notes for clarity. Return ONLY the improved notes, no preamble:\n\n${content}`
-    )
+    try {
+      // Use generateCompletion to avoid cluttering the chat history
+      const improved = await generateCompletion(
+        'You are an expert note-taker and editor.',
+        `Please improve, format, and restructure these notes for maximum clarity and professionalism. Return ONLY the improved notes in raw markdown, with no intro or outro remarks:\n\n${content}`
+      )
+      
+      if (improved) {
+        setContent(improved)
+        localStorage.setItem(storageKey, improved)
+        setSavedIndicator(true)
+        setTimeout(() => setSavedIndicator(false), 2000)
+      }
+    } catch (err) {
+      console.error('[SmartNotes] AI Improve failed:', err)
+    }
     setIsImproving(false)
   }
 

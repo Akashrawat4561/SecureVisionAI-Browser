@@ -10,6 +10,8 @@ const DEFAULT_SETTINGS: BrowserSettings = {
   aiAutosyncEnabled: false, // opt-in only
   tabSuspensionDelayMinutes: 15,
   theme: 'dark',
+  GEMINI_API_KEY: '',
+  OPENAI_API_KEY: '',
 }
 
 /**

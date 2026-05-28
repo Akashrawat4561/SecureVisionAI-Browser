@@ -3,7 +3,7 @@ import { AIMessage } from '@securevision/shared'
 import { useAIStore, AIProvider } from '../store/aiStore'
 
 const API_ENDPOINTS: Record<AIProvider, string> = {
-  GEMINI: `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:streamGenerateContent`,
+  GEMINI: `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:streamGenerateContent`,
   OPENAI: 'https://api.openai.com/v1/chat/completions',
 }
 
@@ -183,7 +183,14 @@ Always be concise, factual, and security-aware. If you detect scam/phishing sign
           onChunk(fullResponse)
         }
       } else {
-        fullResponse = `⚠️ AI request failed: ${err.message === 'RATE_LIMITED' ? 'Rate limit reached. Please wait a moment.' : 'Network error. Check your connection.'}`
+        const msg = err.message || ''
+        if (msg === 'RATE_LIMITED') {
+          fullResponse = '⚠️ AI request failed: Rate limit reached. Please wait a moment.'
+        } else if (msg.includes('400') || msg.includes('403')) {
+          fullResponse = '⚠️ AI request failed: Invalid API Key. Please check your settings.'
+        } else {
+          fullResponse = '⚠️ AI request failed: Network error. Check your connection.'
+        }
         onChunk(fullResponse)
       }
     }
@@ -199,5 +206,31 @@ Always be concise, factual, and security-aware. If you detect scam/phishing sign
     setStreamingContent('')
   }, [activeProvider, addMessage, setIsStreaming, setStreamingContent, getOrCreateConversation])
 
-  return { sendMessage }
+  const generateCompletion = useCallback(async (
+    systemPrompt: string,
+    userInput: string,
+    onChunk?: (chunk: string) => void
+  ): Promise<string> => {
+    const geminiKey: string = await window.secureVisionAPI?.store?.get('GEMINI_API_KEY') || ''
+    const openaiKey: string = await window.secureVisionAPI?.store?.get('OPENAI_API_KEY') || ''
+    const messages: AIMessage[] = [{ role: 'user', content: userInput, timestamp: new Date().toISOString() }]
+    const chunkCb = onChunk || (() => {})
+
+    let provider = activeProvider
+    try {
+      if (provider === 'GEMINI' && geminiKey) {
+        return await streamGemini(messages, systemPrompt, geminiKey, chunkCb)
+      } else if (provider === 'OPENAI' && openaiKey) {
+        return await streamOpenAI(messages, systemPrompt, openaiKey, chunkCb)
+      }
+      throw new Error('No API key configured.')
+    } catch (err: any) {
+      if (provider === 'GEMINI' && openaiKey && err.message !== 'RATE_LIMITED') {
+        return await streamOpenAI(messages, systemPrompt, openaiKey, chunkCb)
+      }
+      throw err
+    }
+  }, [activeProvider])
+
+  return { sendMessage, generateCompletion }
 }
